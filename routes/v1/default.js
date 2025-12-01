@@ -119,5 +119,106 @@ router.get('/user/:id', auth, async (req, res) => {
   }
 });
 
+// =====================
+// BAG ROUTES
+// =====================
+
+// GET /api/v1/default/bag
+// List all bags (public)
+router.get('/bag', async (req, res) => {
+  try {
+    const bags = await BagModel.find().populate('user', 'firstName lastName email');
+    res.json(bags);
+  } catch (error) {
+    console.error('Error in GET /bag:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/v1/default/bag/:id
+// Get one bag by id (public)
+router.get('/bag/:id', async (req, res) => {
+  try {
+    const bagId = req.params.id;
+    const bag = await BagModel.findById(bagId).populate('user', 'firstName lastName email');
+
+    if (!bag) {
+      return res.status(404).json({ error: 'Bag not found' });
+    }
+
+    res.json(bag);
+  } catch (error) {
+    console.error('Error in GET /bag/:id:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/v1/default/bag
+// Create a new bag for the currently logged-in user
+router.post('/bag', auth, async (req, res) => {
+  try {
+    const {
+      name,
+      image,
+      bagColor,
+      font,
+      pattern,
+      packaging,
+      inspiration,
+      keyFlavours,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'name is required' });
+    }
+
+    const newBag = await BagModel.create({
+      name,
+      image: image || '',
+      bagColor: bagColor || '',
+      font: font || '',
+      pattern: pattern || '',
+      packaging: packaging || '',
+      inspiration: inspiration || '',
+      keyFlavours: Array.isArray(keyFlavours) ? keyFlavours : [],
+      user: req.user.id, // from auth middleware
+    });
+
+    res.status(201).json(newBag);
+  } catch (error) {
+    console.error('Error in POST /bag:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /api/v1/default/bag/:id
+// Update an existing bag (must be owner or admin)
+router.put('/bag/:id', auth, async (req, res) => {
+  try {
+    const bagId = req.params.id;
+    const bag = await BagModel.findById(bagId);
+
+    if (!bag) {
+      return res.status(404).json({ error: 'Bag not found' });
+    }
+
+    // Only owner or admin can edit
+    if (bag.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not allowed to edit this bag' });
+    }
+
+    const updateData = req.body;
+
+    const updatedBag = await BagModel.findByIdAndUpdate(bagId, updateData, {
+      new: true,
+    });
+
+    res.json(updatedBag);
+  } catch (error) {
+    console.error('Error in PUT /bag/:id:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Export the router so app.js can use it
 module.exports = router;
