@@ -9,7 +9,6 @@ const { auth } = require('../../middleware/authMiddleware');
 // =====================
 // TEST ROUTE
 // =====================
-
 router.get('/ping', (req, res) => {
   res.send('default router is alive 🧠');
 });
@@ -18,7 +17,6 @@ router.get('/ping', (req, res) => {
 // USER ROUTES
 // =====================
 
-// POST /api/v1/default/user
 // Register a new normal user (role: "user")
 router.post('/user', async (req, res) => {
   try {
@@ -55,7 +53,6 @@ router.post('/user', async (req, res) => {
   }
 });
 
-// POST /api/v1/default/user/auth
 // Login: return JWT token if email + password are correct
 router.post('/user/auth', async (req, res) => {
   try {
@@ -97,7 +94,6 @@ router.post('/user/auth', async (req, res) => {
   }
 });
 
-// GET /api/v1/default/user/:id
 // Get details of ONE user (must be logged in and either same user or admin)
 router.get('/user/:id', auth, async (req, res) => {
   try {
@@ -123,7 +119,6 @@ router.get('/user/:id', auth, async (req, res) => {
 // BAG ROUTES
 // =====================
 
-// GET /api/v1/default/bag
 // List all bags (public)
 router.get('/bag', async (req, res) => {
   try {
@@ -135,7 +130,6 @@ router.get('/bag', async (req, res) => {
   }
 });
 
-// GET /api/v1/default/bag/:id
 // Get one bag by id (public)
 router.get('/bag/:id', async (req, res) => {
   try {
@@ -153,7 +147,6 @@ router.get('/bag/:id', async (req, res) => {
   }
 });
 
-// POST /api/v1/default/bag
 // Create a new bag for the currently logged-in user
 router.post('/bag', auth, async (req, res) => {
   try {
@@ -191,7 +184,6 @@ router.post('/bag', auth, async (req, res) => {
   }
 });
 
-// PUT /api/v1/default/bag/:id
 // Update an existing bag (must be owner or admin)
 router.put('/bag/:id', auth, async (req, res) => {
   try {
@@ -220,5 +212,62 @@ router.put('/bag/:id', auth, async (req, res) => {
   }
 });
 
+// =====================
+// VOTE ROUTES
+// =====================
+
+// Create a vote for a bag (must be logged in)
+router.post('/vote/:bagId', auth, async (req, res) => {
+  try {
+    const bagId = req.params.bagId;
+
+    // Check that bag exists
+    const bag = await BagModel.findById(bagId);
+    if (!bag) {
+      return res.status(404).json({ error: 'Bag not found' });
+    }
+
+    // Prevent double-voting from the same user on the same bag
+    const existingVote = await VoteModel.findOne({
+      user: req.user.id,
+      bag: bagId,
+    });
+
+    if (existingVote) {
+      return res.status(400).json({ error: 'You already voted for this bag' });
+    }
+
+    const newVote = await VoteModel.create({
+      user: req.user.id,
+      bag: bagId,
+    });
+
+    res.status(201).json(newVote);
+  } catch (error) {
+    console.error('Error in POST /vote/:bagId:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Remove your vote for a bag (must be logged in)
+router.delete('/vote/:bagId', auth, async (req, res) => {
+  try {
+    const bagId = req.params.bagId;
+
+    const deletedVote = await VoteModel.findOneAndDelete({
+      user: req.user.id,
+      bag: bagId,
+    });
+
+    if (!deletedVote) {
+      return res.status(404).json({ error: 'Vote not found' });
+    }
+
+    res.json({ message: 'Vote removed' });
+  } catch (error) {
+    console.error('Error in DELETE /vote/:bagId:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 // Export the router so app.js can use it
 module.exports = router;
