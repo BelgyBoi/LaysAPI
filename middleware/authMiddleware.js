@@ -20,7 +20,7 @@ function auth(req, res, next) {
       role: decoded.role,
     };
 
-    next();
+    next(); 
   } catch (err) {
     console.error('auth middleware error:', err);
     return res.status(401).json({ error: 'Invalid token' });
@@ -34,6 +34,7 @@ function adminOnly(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin only' });
   }
+
   next();
 }
 

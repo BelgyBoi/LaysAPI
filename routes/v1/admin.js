@@ -1,22 +1,30 @@
 const express = require('express');
 const router = express.Router();
+const { auth, adminOnly } = require('../../middleware/authMiddleware');
 const UserModel = require('../../models/userModel');
 const BagModel = require('../../models/bagModel');
 const VoteModel = require('../../models/votesModel');
-const { auth, adminOnly } = require('../../middleware/authMiddleware');
 
+// =====================
+// TEST ROUTE
+// =====================
 router.get('/ping', (req, res) => {
-    res.send('I am Rodney the mod, I like discord kittens😺');
+    return  res.send('I am Rodney the mod, I like discord kittens😺');
 });
 
-router.get('/bag', auth, adminOnly, async(res, req) => {
-    try{
-        const bags = await bagModel.find();
-        res.json(bags);
-    } catch(error) {
-        console.error('Error in admin GET /bag:', error);
-        res.status(500).json({ error:"Server error"});
-    }
+// Only admins can see all bags
+router.get('/bag', auth, adminOnly, async (req, res) => {
+  try {
+    // Just to debug what res is:
+    console.log('admin GET /bag -> typeof res.status:', typeof res.status);
 
+    const bags = await BagModel.find();
+
+    return res.json(bags);
+  } catch (error) {
+    console.error('Error in admin GET /bag:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
+
 module.exports = router;
