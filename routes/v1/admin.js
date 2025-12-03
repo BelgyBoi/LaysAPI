@@ -52,5 +52,23 @@ router.delete('/bag/:id', auth, adminOnly, async (req, res) => {
   }
 });
 
+// =====================
+// VOTE ROUTES
+// =====================
+// see overview of ALL votes
+router.get('/vote', auth, adminOnly, async (req, res) => {
+  try {
+    // Find all votes and populate user + bag info
+    const votes = await VoteModel
+      .find()
+      .populate('user', 'firstName lastName email')
+      .populate('bag', 'name image');
+
+    return res.json(votes);
+  } catch (error) {
+    console.error('Error in admin GET /vote:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
 
 module.exports = router;
