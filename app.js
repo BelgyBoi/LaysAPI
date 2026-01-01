@@ -9,7 +9,7 @@ app.use(cors({
   origin: ['https://lays-configurator-tdd.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 const defaultRoutes = require('./routes/v1/default');
 const adminRoutes = require('./routes/v1/admin');

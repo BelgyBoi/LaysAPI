@@ -62,7 +62,7 @@ router.get('/vote', auth, adminOnly, async (req, res) => {
     const votes = await VoteModel
       .find()
       .populate('user', 'firstName lastName email')
-      .populate('bag', 'name image');
+      .populate('bag', 'name image snapshot');
 
     return res.json(votes);
   } catch (error) {

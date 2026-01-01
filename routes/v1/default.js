@@ -227,6 +227,7 @@ router.post('/bag', auth, async (req, res) => {
     const newBag = await BagModel.create({
       name,
       image: image || '',
+      snapshot: req.body.snapshot || '',
       bagColor: bagColor || '',
       font: font || '',
       pattern: pattern || '',
@@ -258,7 +259,7 @@ router.put('/bag/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Not allowed to edit this bag' });
     }
 
-    const updateData = req.body;
+    const updateData = req.body; // snapshot can be passed here
 
     const updatedBag = await BagModel.findByIdAndUpdate(bagId, updateData, {
       new: true,
