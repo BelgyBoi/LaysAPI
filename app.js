@@ -6,7 +6,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 app.use(cors({
-  origin: ['https://lays-configurator-tdd.vercel.app', 'http://localhost:5173', 'http://localhost:3000', 'lays-admin-panel.vercel.app'],
+  origin: ['https://lays-configurator-tdd.vercel.app', 'http://localhost:5173', 'http://localhost:3000', 'http://lays-admin-panel.vercel.app'],
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
