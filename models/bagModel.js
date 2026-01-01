@@ -5,7 +5,8 @@ const mongoose = require('mongoose');
 const bagSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },          
-    image: { type: String, default: '' },            
+    image: { type: String, default: '' },            // preview image URL (optional)
+    snapshot: { type: String, default: '' },         // 3D bag snapshot preview (generated)
     bagColor: { type: String, default: '' },         
     font: { type: String, default: '' },             
     pattern: { type: String, default: '' },          
