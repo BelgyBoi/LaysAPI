@@ -5,8 +5,7 @@ const mongoose = require('mongoose');
 const bagSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },          // name of the bag/config
-    image: { type: String, default: '' },            // uploaded design image (user upload)
-    snapshot: { type: String, default: '' },         // 3D bag snapshot preview (generated)
+    image: { type: String, default: '' },            // preview image URL (optional)
     bagColor: { type: String, default: '' },         // main color (e.g. "#FFD200")
     font: { type: String, default: '' },             // font key/name
     pattern: { type: String, default: '' },          // pattern key ("stripes", "dots", ...)
