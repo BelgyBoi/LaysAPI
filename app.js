@@ -1,9 +1,14 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+app.use(cors({
+  origin: ['https://lays-configurator-tdd.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 const defaultRoutes = require('./routes/v1/default');
