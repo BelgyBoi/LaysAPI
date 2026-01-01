@@ -94,6 +94,24 @@ router.post('/user/auth', async (req, res) => {
   }
 });
 
+// Get a list of bags the CURRENT user has voted on
+router.get('/user/votes', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find all votes by this user
+    const votes = await VoteModel.find({ user: userId }).select('bag');
+
+    // Return just the array of bag IDs
+    const bagIds = votes.map((v) => v.bag);
+
+    res.json(bagIds);
+  } catch (error) {
+    console.error('Error in GET /user/votes:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Get details of ONE user (must be logged in and either same user or admin)
 router.get('/user/:id', auth, async (req, res) => {
   try {
@@ -119,33 +137,74 @@ router.get('/user/:id', auth, async (req, res) => {
 // BAG ROUTES
 // =====================
 
-// List all bags (public)
+// List all bags (sorted by vote count)
 router.get('/bag', async (req, res) => {
   try {
-    const bags = await BagModel.find().populate('user', 'firstName lastName email');
-    res.json(bags);
+    // We used to just do BagModel.find()...
+    // checking "votes" collection to get a count per bag is better done via aggregation
+    // or we can just iterate if dataset is small.
+    // Let's do a simple workaround: get all bags, get all vote counts, map them.
+
+    const bags = await BagModel.find().populate('user', 'firstName lastName email').lean();
+
+    // Aggregation to count votes per bag
+    // Output format example: [ { _id: bagId, count: 5 }, ... ]
+    const voteCounts = await VoteModel.aggregate([
+      {
+        $group: {
+          _id: '$bag',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Create a map for quick lookup: { bagId: count }
+    const voteMap = {};
+    voteCounts.forEach((v) => {
+      voteMap[v._id.toString()] = v.count;
+    });
+
+    // Attach voteCount to each bag
+    const bagsWithVotes = bags.map((bag) => {
+      return {
+        ...bag,
+        voteCount: voteMap[bag._id.toString()] || 0,
+      };
+    });
+
+    // Optional: sort by most voted?
+    // bagsWithVotes.sort((a, b) => b.voteCount - a.voteCount);
+
+    res.json(bagsWithVotes);
   } catch (error) {
     console.error('Error in GET /bag:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Get one bag by id (public)
+// Get one bag by id (public) + vote count
 router.get('/bag/:id', async (req, res) => {
   try {
     const bagId = req.params.id;
-    const bag = await BagModel.findById(bagId).populate('user', 'firstName lastName email');
+    const bag = await BagModel.findById(bagId)
+      .populate('user', 'firstName lastName email')
+      .lean();
 
     if (!bag) {
       return res.status(404).json({ error: 'Bag not found' });
     }
 
-    res.json(bag);
+    // Get vote count for this specific bag
+    const count = await VoteModel.countDocuments({ bag: bagId });
+
+    res.json({ ...bag, voteCount: count });
   } catch (error) {
     console.error('Error in GET /bag/:id:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
 
 // Create a new bag for the currently logged-in user
 router.post('/bag', auth, async (req, res) => {
